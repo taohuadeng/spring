@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+
+    <context:annotation-config/>
+    <context:component-scan base-package="com.thd.spring.tx"/>
+
+    <!-- 属性文件读入 -->
+    <bean id="propertyConfigurer"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:config.properties</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+        <property name="driverClassName" value="${connection.driver}"/>
+        <property name="url" value="${connection.url}"/>
+        <property name="username" value="${connection.username}"/>
+        <property name="password" value="${connection.password}"/>
+        <!-- 连接池启动时的初始值 -->
+        <property name="initialSize" value="2"/>
+        <!-- 连接池的最大值 -->
+        <property name="maxActive" value="10"/>
+    </bean>
+
+    <!-- 配置会话工厂 -->
+    <bean id="sessionFactory"
+          class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <!-- 扫面Hibernate注解包,主要是model domain  -->
+        <property name="packagesToScan">
+            <list>
+                <value>com.thd.spring.**.model</value>
+            </list>
+        </property>
+        <property name="hibernateProperties">
+            <props>
+                <prop key="hibernate.dialect">
+                    ${hibernate.dialect}
+                </prop>
+                <prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+                <prop key="hibernate.format_sql">${hibernate.format_sql}</prop>
+                <prop key="hibernate.hbm2ddl.auto">create</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!--配置Spring事务管理 开始-->
+    <!--创建事务管理器-->
+    <bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <!--第一种方式：每个Bean都有一个代理-->
+    <bean id="accountServiceTarget" class="com.thd.spring.tx.account.service.AccountService"/>
+
+    <!--此处采用配置方式加载service 和注解不可同时使用-->
+    <bean id="accountService"
+          class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <!-- 配置事务管理器 -->
+        <property name="transactionManager" ref="transactionManager"/>
+        <property name="target" ref="accountServiceTarget"/>
+        <!--接口编程需要这样配置-->
+        <!--<property name="proxyInterfaces" value="com.thd.spring.tx.account.service.AccountService" />-->
+        <!-- 配置事务属性 -->
+        <property name="transactionAttributes">
+            <props>
+                <prop key="*">PROPAGATION_REQUIRED</prop>
+            </props>
+        </property>
+    </bean>
+    <!--配置Spring事务管理 结束-->
+</beans>
