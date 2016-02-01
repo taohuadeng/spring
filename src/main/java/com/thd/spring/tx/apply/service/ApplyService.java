@@ -26,6 +26,11 @@ public class ApplyService {
         throw new RuntimeException("saveApply");
     }
 
+    public Long saveApplyTx2NoTx(Apply apply) {
+        baseDao.save(apply);
+        throw new RuntimeException("saveApply");
+    }
+
     public Long saveApply(Apply apply) {
         baseDao.save(apply);
         throw new RuntimeException("saveApply");

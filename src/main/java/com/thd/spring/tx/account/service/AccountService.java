@@ -28,6 +28,11 @@ public class AccountService {
         throw new RuntimeException("saveApply");
     }
 
+    public String saveAccountTx2(Account account) {
+        baseDao.save(account);
+        throw new RuntimeException("saveApply");
+    }
+
     public String addAccount(Account account) {
         Long accountId = null;
         try {
